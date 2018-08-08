@@ -30,12 +30,26 @@
 </head>
 <body>
   <div class="container fluid">
-    <h2>Discussion body</h2>
+  <?php
+    if(isset($home)){ 
+      //echo '<pre>'. print_r($_SESSION, true) .'</pre>';
+  ?>
+      <div id="navi" align="right" class="container fluid">
+        <br /><br /><button id="home" class="btn btn-primary"><span class="glyphicon glyphicon-home"></span> Home</button>
+        <a href="https://login.marist.edu/cas/logout"><button id="logout" type="reset" class="btn btn-logout"><span class="glyphicon glyphicon-log-out"></span> Logout</button></a>
+		  </div>
+      <div>
+        <?php echo "<h2><font color='#b31b1b'>".$title."</font></h2>"; echo "<h3>Hello, <font color='#0040ff	'>".ucfirst($username)."!</font></h3>"; ?><br />
+      </div>
+    <?php
+    }
+  ?>
+    <h2>Discussion</h2>
     <!--View to show the body of discussions, forums and comments on the discussions -->
     <div class="list-group list-group-item">
       <?php if($query->result()) {
       foreach ($query->result() as $result) : $this->input->post($result->d_title,$result->cwid,$result->d_id,$result->d_body); //$d_id=$result->d_id;?>
-        <h4 class="list-group-item-heading">Title: <?php echo $result->d_title; ?></h4>
+        <h4 class="list-group-item-heading">Title: <?php echo $result->d_title;$discussion_title=$result->d_title; ?></h4>
         <p class="list-group-item-text" style="color:gray"><?php echo "Created by ".ucfirst($result->username); ?></p>
         <p><?php echo $result->d_body; ?></p><br />
     <?php endforeach; } else {?>
@@ -71,7 +85,7 @@
         <div class="modal-content">
           <div class="modal-header">
             <button type="button" id="postcancel" name="postcancel" class="close" data-dismiss="modal" onclick="commentclose()">&times;</button>
-            <h4 class="modal-title">New Post</h4>
+            <h2 class="modal-title">Disscussion title</h2><label for="discussionTitle"><?php echo ucwords($discussion_title); ?></label>
           </div>
           <div class="modal-body">
                    <form role="form" id="postmodal">
@@ -80,14 +94,22 @@
                        <input type="text" class="form-control" id="postTitle" placeholder="Title"/>
                    </div>-->
                    <div class="form-group">
-                       <label for="postBody">Post Body</label>
+                       <label for="postBody">Reply</label>
                        <textarea class="form-control" id="postBody" placeholder="Enter your message"></textarea>
                        <input type="hidden" id="di_id" value = "<?php echo (isset($result->d_id))?$result->d_id:'';?>" />
                    </div>
                    </form>
           </div>
           <div class="modal-footer">
+          <?php if(isset($home)){ ?>
+            <button type="button" class="btn btn-primary submitBtn" onclick="submitReplyForm()" >Submit</button>
+          <?php
+          } else { ?>
             <button type="button" class="btn btn-primary submitBtn" onclick="submitPostForm()" >Submit</button>
+          <?php 
+          } 
+          ?>
+            
             <button type="button" class="btn btn-warning" data-dismiss="modal" id="postcancel" name="postcancel" onclick="commentclose()">Close</button>
           </div>
 
@@ -99,6 +121,78 @@
     </div>
     <!--<?php// echo form_close(); ?>-->
     <script type="text/javascript">
+
+    $(document).keydown(function(e) { 
+      if (e.keyCode == 27) { 
+        $('.modal-backdrop').remove();
+        $("#postBody").val("");
+        $("#postBody-error").hide();
+        $(".error").removeClass(".my-error-class");
+        $('.submitBtn').attr("enabled","enabled");
+        $('#myModal').modal('hide');
+      } 
+    });
+
+
+    $("#navi").click(function(){
+			window.location.href = '<?php echo base_url() ?>';
+		});
+    
+    function submitReplyForm(){
+      var reg = /^[A-Z0-9._%+-]+@([A-Z0-9-]+\.)+[A-Z]{2,4}$/i;
+      //var pcwid = $('#pcwid').val();
+      var ptitle = 'default';
+      var pbody = $('#postBody').val();
+      var d_id = $('#di_id').val();
+      if(ptitle.trim() == '' ){
+          alert('Please enter your post title.');
+          //$('#postTitle').focus();
+          return false;
+      }else if(pbody.trim() == '' ){
+          alert('Please enter your message.');
+          $('#postBody').focus();
+          return false;
+      }else{
+        //console.log("finally in else");
+        $.ajax({
+            type:'POST',
+            url:'<?php echo base_url() ?>'+'Discussion/addNewPost', //+cwid+'/'+title+'/'+body+'/'+d_id
+            data:{'contactFrmSubmit':'1', 'postTitle' :ptitle, 'postBody':pbody, 'd_id':d_id},
+            dataType: 'text',
+            beforeSend: function () {
+                $('.submitBtn').attr("disabled","disabled");
+                $('.modal-body').css('opacity', '.5');
+            },
+            success:function(msg){
+              if(msg == 'ok'){
+                  $('#postBody').val('');
+                  $('.statusMsg').html('<span style="color:green;">Thanks for contacting us, we\'ll get back to you soon.</p>');
+              }else{
+                  $('.statusMsg').html('<span style="color:red;">Some problem occurred, please try again.</span>');
+              }
+              
+            },
+        }).done(function(){
+          var resultUrl = '<?php echo base_url()?>'+'Discussion/search_discussion/'+d_id;//document.getElementById('getURL').value; //"<?php //echo base_url().'Discussion/discussionDetails/'; ?>"+getdid;
+          console.log(resultUrl);
+          //$('#ddetails').empty();
+          $('#dlist').css('display','none');
+          $('#disclist').css('display','none');
+          $('#ddetails').load(resultUrl);
+          $('#ddetails').css('display','block');
+          $('.modal-backdrop').remove();
+          $("#postBody").val("");
+          $("#postBody-error").hide();
+          $(".error").removeClass(".my-error-class");
+          $('.submitBtn').attr("enabled","enabled");
+          $('#myModal').modal('hide');
+          $('body').removeClass("modal-open");
+          $('body').addClass("modal-close");
+          window.location.reload(true);
+          $('html, body').animate({ scrollTop: 0 }, 0);
+        });		
+      }
+		}
     //$('#postdatatable').DataTable();
     $('#easyPaginate').easyPaginate({
 	      paginateElement: 'li',

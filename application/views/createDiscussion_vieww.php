@@ -39,6 +39,9 @@
 			<a href="https://login.marist.edu/cas/logout"><button id="logout" type="reset" class="btn btn-logout"><span class="glyphicon glyphicon-log-out"></span> Logout</button></a>
 		</div>
 		<div class="container fluid" id="cview">
+		<?php
+			//echo '<pre>' . print_r($_SESSION, TRUE) .'</pre>';
+		?>
 			<div id="main_page" class="form-group">
 				<?php if($username == ''){ ?>
 					<div class="form-group" id="mailform" class="mailform">
@@ -49,7 +52,7 @@
 						</div>
 					</div>
 				<?php } else { ?>
-	      <?php echo "<h3>".$title."</h3>"; echo "<h3>Hello, <font color='#0040ff	'>".ucfirst($username)."!</font></h3>"; ?><br />
+	      <?php echo "<h2><font color='#b31b1b'>".$title."</font></h2>"; echo "<h3>Hello, <font color='#0040ff	'>".ucfirst($username)."!</font></h3>"; ?><br />
 	      <button type="button" class="btn btn-default btn-lg" id="newDiscussion" name="newDiscussion" data-toggle="modal" data-target="#newModal">Create Discussion</button>
 				<br /><br /><br />
 				<!--<button type="button" class="btn btn-default btn-lg" id="ogd" name="ogd">View on going Discussions</button>
@@ -126,8 +129,18 @@
 			<a href="http://www.marist.edu/disclaimers.html" target="_blank" >Disclaimers</a> | <a href="http://www.marist.edu/privacy.html" target="_blank" >Privacy Policy</a>
 	        </p>
 	    </div>
-			<script type="text/javascript" class="init">
-
+		<script type="text/javascript" class="init">
+			$(document).keydown(function(e) { 
+				if (e.keyCode == 27) { 
+					$('.modal-backdrop').remove();
+					$("#postBody").val("");
+					$("#postBody-error").hide();
+					$(".error").removeClass(".my-error-class");
+					$('.submitBtn').attr("enabled","enabled");
+					$('#myModal').modal('hide');
+					$('#newModal').modal('hide');
+				} 
+			});
 			$(document).ready(function(){
 				$("#navi").click(function(){
 					window.location.href = '<?php echo base_url() ?>';
@@ -141,6 +154,7 @@
 				//setTimeout(function(){alert($("li#casdata").html());},2000);
         //$('#ddetails').css('display','block');
 				//validation for create discussions
+
 				$("#newModalDisc").validate({
 					errorClass: "my-error-class",
 					 rules: {
@@ -173,6 +187,7 @@
 						 $(element).valid();
 					 }
 				 });
+
 				 $("#cancel").click(function() {
 					 $("#cat:first-child").text("Select Discussion Category");
 					 $("#cat:first-child").val("default");
@@ -184,116 +199,115 @@
 					$(".error").removeClass(".my-error-class");
 					//alert("clicked cancel");
 				 });
-			 });
+			});
 			 //this method submits the newly created discussion and returns to the discussion details page.
  			function submitDiscussionForm(){
- 					var reg = /^[A-Z0-9._%+-]+@([A-Z0-9-]+\.)+[A-Z]{2,4}$/i;
+				var reg = /^[A-Z0-9._%+-]+@([A-Z0-9-]+\.)+[A-Z]{2,4}$/i;
  					//var cwid = $('#ccwid').val();
- 					var category = $('#category').val();
- 					console.log("this is your category\n"+category);
- 					var ds_title = $('#ds_title').val();
- 					console.log("discussion title:"+ds_title);
- 					var ds_body = $('#ds_body').val();
- 					console.log("discussion body:"+ds_body);
- 					var ds_num = Math.random() * 1000000;
- 					console.log("discussion random number:"+ds_num);
-
- 					if(category.trim() == ''){
- 							alert('Please enter your CWID.');
- 							$('#category').focus();
- 							return false;
- 					}else if(ds_title.trim() == ''){
- 							alert('Please enter your message.');
- 							$('#ds_title').focus();
- 							return false;
- 					}else if(ds_body.trim() == ''){
- 							alert('Please enter your message.');
- 							$('#ds_body').focus();
- 							return false;
- 					}else{
- 						//alert("in else");
- 							$.ajax({
- 									type:'POST',
- 									url:'<?php echo base_url(); ?>'+'Discussion/create', //+cwid+'/'+title+'/'+body+'/'+d_id
- 									//data:'contactFrmSubmit=1&cwid='+cwid+'&postTitle='+title+'&postBody='+body+'&d_id='+d_id,//,
- 									data:{/*'cwid' :cwid,*/ 'category' : category, 'ds_title':ds_title, 'ds_body':ds_body, 'ds_num':ds_num},
-									dataType: 'text',
- 									beforeSend: function () {
- 											$('.submitBtn').attr("disabled","disabled");
- 											$('.modal-body').css('opacity', '.5');
- 									},
- 									success:function(msg){
- 											if(msg == 'ok'){
- 													//$('#ccwid').val('');
- 													$('#category').val('');
- 													$('#ds_title').val('');
- 													$('#ds_body').val('');
- 													$('.statusMsg').html('<span style="color:green;">Thanks for contacting us, we\'ll get back to you soon.</p>');
- 											}else{
- 													$('.statusMsg').html('<span style="color:red;">Some problem occurred, please try again.</span>');
- 											}
- 											$('.submitBtn').removeAttr("disabled");
- 											$('.modal-body').css('opacity', '');
- 											$('#newModal').modal('hide');
- 											$('.modal-backdrop').remove();
- 											fetchDiscussion('<?php echo base_url()?>'+'Discussion/search_discussion/'+ds_num);
- 										//	$(document).on('hidden.bs.modal','#newModal', function () {
- 								//});
- 							}
- 						});
-						$('[data-spy="scroll"]').each(function () {
-  						$('body').scrollspy('refresh');
+				var category = $('#category').val();
+				console.log("this is your category\n"+category);
+				var ds_title = $('#ds_title').val();
+				console.log("discussion title:"+ds_title);
+				var ds_body = $('#ds_body').val();
+				console.log("discussion body:"+ds_body);
+				var ds_num = Math.random() * 1000000;
+				console.log("discussion random number:"+ds_num);
+				if(category.trim() == ''){
+					alert('Please enter your CWID.');
+					$('#category').focus();
+					return false;
+				}else if(ds_title.trim() == ''){
+					alert('Please enter your message.');
+					$('#ds_title').focus();
+					return false;
+				}else if(ds_body.trim() == ''){
+					alert('Please enter your message.');
+					$('#ds_body').focus();
+					return false;
+				}else{
+					//alert("in else");
+					$.ajax({
+							type:'POST',
+							url:'<?php echo base_url(); ?>'+'Discussion/create', //+cwid+'/'+title+'/'+body+'/'+d_id
+							//data:'contactFrmSubmit=1&cwid='+cwid+'&postTitle='+title+'&postBody='+body+'&d_id='+d_id,//,
+							data:{/*'cwid' :cwid,*/ 'category' : category, 'ds_title':ds_title, 'ds_body':ds_body, 'ds_num':ds_num},
+							dataType: 'text',
+							beforeSend: function () {
+									$('.submitBtn').attr("disabled","disabled");
+									$('.modal-body').css('opacity', '.5');
+							},
+							success:function(msg){
+								if(msg == 'ok'){
+									//$('#ccwid').val('');
+									$('#category').val('');
+									$('#ds_title').val('');
+									$('#ds_body').val('');
+									$('.statusMsg').html('<span style="color:green;">Thanks for contacting us, we\'ll get back to you soon.</p>');
+								}else{
+									$('.statusMsg').html('<span style="color:red;">Some problem occurred, please try again.</span>');
+								}
+								$('.submitBtn').removeAttr("disabled");
+								$('.modal-body').css('opacity', '');
+								$('#newModal').modal('hide');
+								$('.modal-backdrop').remove();
+								fetchDiscussion('<?php echo base_url()?>'+'Discussion/search_discussion/'+ds_num);
+								//	$(document).on('hidden.bs.modal','#newModal', function () {
+								//});
+							}
 						});
- 					}
- 				}
-				function submitPostForm(){
-					var reg = /^[A-Z0-9._%+-]+@([A-Z0-9-]+\.)+[A-Z]{2,4}$/i;
-					//var pcwid = $('#pcwid').val();
-					var ptitle = 'default';
-					var pbody = $('#postBody').val();
-					var d_id = $('#di_id').val();
-					if(ptitle.trim() == '' ){
-							alert('Please enter your post title.');
-							//$('#postTitle').focus();
-							return false;
-					}else if(pbody.trim() == '' ){
-							alert('Please enter your message.');
-							$('#postBody').focus();
-							return false;
-					}else{
-						//console.log("finally in else");
-							$.ajax({
-									type:'POST',
-									url:'<?php echo base_url() ?>'+'Discussion/addNewPost', //+cwid+'/'+title+'/'+body+'/'+d_id
-									data:{'contactFrmSubmit':'1', 'postTitle' :ptitle, 'postBody':pbody, 'd_id':d_id},
-									dataType: 'text',
-									beforeSend: function () {
-											$('.submitBtn').attr("disabled","disabled");
-											$('.modal-body').css('opacity', '.5');
-									},
-									success:function(msg){
-											if(msg == 'ok'){
-													$('#postBody').val('');
-													$('.statusMsg').html('<span style="color:green;">Thanks for contacting us, we\'ll get back to you soon.</p>');
-											}else{
-													$('.statusMsg').html('<span style="color:red;">Some problem occurred, please try again.</span>');
-											}
-											var resultUrl = '<?php echo base_url()?>'+'Discussion/search_discussion/'+d_id;//document.getElementById('getURL').value; //"<?php //echo base_url().'Discussion/discussionDetails/'; ?>"+getdid;
-									    console.log(resultUrl);
-											//$('#ddetails').empty();
-											$('#dlist').css('display','none');
-											$('#disclist').css('display','none');
-									    $('#ddetails').load(resultUrl);
-									    $('#ddetails').css('display','block');
-											$('.modal-backdrop').remove();
-									},
-							}).done(function(){
-								$('body').removeClass("modal-open");
-								$('body').addClass("modal-close");
-								$('html, body').animate({ scrollTop: 0 }, 0);
-							});
-							
-					}
+					$('[data-spy="scroll"]').each(function () {
+						$('body').scrollspy('refresh');
+					});
+				}
+			}
+
+			function submitPostForm(){
+				var reg = /^[A-Z0-9._%+-]+@([A-Z0-9-]+\.)+[A-Z]{2,4}$/i;
+				//var pcwid = $('#pcwid').val();
+				var ptitle = 'default';
+				var pbody = $('#postBody').val();
+				var d_id = $('#di_id').val();
+				if(ptitle.trim() == '' ){
+						alert('Please enter your post title.');
+						//$('#postTitle').focus();
+						return false;
+				}else if(pbody.trim() == '' ){
+						alert('Please enter your message.');
+						$('#postBody').focus();
+						return false;
+				}else{
+					//console.log("finally in else");
+					$.ajax({
+							type:'POST',
+							url:'<?php echo base_url() ?>'+'Discussion/addNewPost', //+cwid+'/'+title+'/'+body+'/'+d_id
+							data:{'contactFrmSubmit':'1', 'postTitle' :ptitle, 'postBody':pbody, 'd_id':d_id},
+							dataType: 'text',
+							beforeSend: function () {
+									$('.submitBtn').attr("disabled","disabled");
+									$('.modal-body').css('opacity', '.5');
+							},
+							success:function(msg){
+								if(msg == 'ok'){
+										$('#postBody').val('');
+										$('.statusMsg').html('<span style="color:green;">Thanks for contacting us, we\'ll get back to you soon.</p>');
+								}else{
+										$('.statusMsg').html('<span style="color:red;">Some problem occurred, please try again.</span>');
+								}
+								var resultUrl = '<?php echo base_url()?>'+'Discussion/search_discussion/'+d_id;//document.getElementById('getURL').value; //"<?php //echo base_url().'Discussion/discussionDetails/'; ?>"+getdid;
+								console.log(resultUrl);
+								//$('#ddetails').empty();
+								$('#dlist').css('display','none');
+								$('#disclist').css('display','none');
+								$('#ddetails').load(resultUrl);
+								$('#ddetails').css('display','block');
+								$('.modal-backdrop').remove();
+							},
+					}).done(function(){
+						$('body').removeClass("modal-open");
+						$('body').addClass("modal-close");
+						$('html, body').animate({ scrollTop: 0 }, 0);
+					});		
+				}
 			}
 			/*function fetchList(myURL){
 				var resultUrl = myURL;//document.getElementById('getURL').value; //"<//?php //echo base_url().'Discussion/discussionDetails/'; ?>"+getdid;
