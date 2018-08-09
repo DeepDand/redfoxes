@@ -5,6 +5,10 @@ class Discussion extends CI_Controller
 	private $current_line;
 	private $recent = true;
 
+	/**
+	 * Create session if already not started
+	 * Load model and language library
+	 */
 	public function __construct(){
 		parent::__construct();
 		if(!isset($_SESSION))    {
@@ -14,6 +18,17 @@ class Discussion extends CI_Controller
 		$this->lang->load('en_admin_lang');
 		$this->load->model('Discussion_model');
 	}
+
+	/**
+	 * CAS login
+	 * If successful, 2 flows 
+	 * 1>		Check if user is already in database
+	 * 			If yes, get the name and load discussion list page
+	 * 			If not, ask user to enter Marist Email ID, the email is then stored in db, separated firstname and last name from it.	
+	 * 		Load createDiscussion_vieww
+	 * 			Data - username, firstname, title, user, access, cwid
+	 * 2> If not, user is not allowed to go further.
+	 */
 
 	public function index()
 	{
@@ -100,15 +115,24 @@ class Discussion extends CI_Controller
 	}
 
 
-
+	/**
+	 * A test view to load when some functions works
+	 */
 	public function successView(){
 		$this->load->view('success_view');
 	}
 
+	/**
+	 * A test view to load when some functions fails
+	 */
 	public function failView(){
 		$this->load->view('fail_view');
 	}
 
+	/**
+	 * CAS url redirects to this method after ticket validation
+	 * The method checks for unique user, gets username and loads createDiscussion_vieww 
+	 */
 	public function createDiscussionview(){
 				$data['user'] = $_SESSION['user'];
 				$cwid = $_SESSION['user'];
@@ -122,11 +146,21 @@ class Discussion extends CI_Controller
 				$this->load->view('createDiscussion_vieww',$data);
 	}
 
+	/**
+	 * Loads discussion list from database with details - Discussion Title, Created by, Category, Created Date 
+	 */
 	public function discussionList(){
 		$page_data['query'] = $this->Discussion_model->discussion_list();
 		$this->load->view('discussionList_view',$page_data);
 	}
 
+	/**
+	 * This method is called when a new discussion is to be created
+	 * Added a server side validation (for reason if someone is stopping javascript on webpage, there are chances that a new conversation with empty data will be created)
+	 * 		If controller validation fails, load newDiscussion_view 
+	 * 		Else, continue with adding data to database
+	 * Check emailflag for category -> if 1, - send email else only update database with new discussion.
+	 */
 	public function create() {
     //$this->form_validation->set_rules('cwid', $this->lang->line('cwid'), 'required|min_length[8]|max_length[8]');
 		$this->form_validation->set_rules('ds_title', $this->lang->line('discussion_ds_title'), 'required|min_length[1]|max_length[50]');
@@ -170,8 +204,12 @@ class Discussion extends CI_Controller
 		}
 	}
 	
+	/**
+	 * This method is called upon a click action on any discussion from discussion list.
+	 * We send the discussion iD in 3rd URI segment which is used to fetch discussion details.
+	 * It fetches details that  include the discussion title, discussion details and replies on that given discussion.
+	 */
 	public function discussionDetails(){
-		//details include the discussion body, posts on the discussion and the comments on these posts
 			$did = $this->uri->segment(3);
 			if(strlen($did) > 12){
 				$did=substr($did,6,-6);
@@ -190,7 +228,12 @@ class Discussion extends CI_Controller
 	}
 
 	/**
-	 * Function for sending the link to user and checking CAS upon click
+	 * This function is part of link that is sent to the users in email
+	 * It checks CAS login upon click on the link
+	 * If login is successful users see the discussion details page
+	 * The discussionDetails_view  has been altered when it is loaded from this function. The alterations are,  		>to show home and logout buttons for the users
+	 * 			>To call different js function on submit for a reply on that discussion.(Reason - ajax behaves differently both flows)
+	 * Email is sent to the category mail iD if mailFlag is 1.
 	 */
 	public function linkToDiscussion(){
 		$this->load->model('Discussion_model');
@@ -287,7 +330,14 @@ class Discussion extends CI_Controller
 		}
 	}
 
-
+	/**
+	 * This function is called when “Submit” button on reply popup is clicked. 
+	 * Adds reply to the discussion
+	 * Add the reply to database with discussion ID
+	 * Check emailFlag for the category and mail if flag is 1
+	 * 		For finding out category, we first check the discussion ID, get category from database for that discussion ID and then check the flag for the category in email table.
+	 * Load the discussionDetails_view again with newly added reply.
+	 */
 	public function addNewPost(){
 		$data['title'] = "Marist Disussion Forums";
 	  // Submitted form data
@@ -320,6 +370,14 @@ class Discussion extends CI_Controller
 			$this->load->view('fail_view');
 		}
 	}
+
+	/**
+	 * This function is called when the Marist user is logging in for the first time. 
+	 * When a user logs in for first time, they are not part of our database yet and so we don’t have their names. 
+	 * The email address is divided in first name and last name and sent to this method using “POST”
+	 * The same are stored in db - “webusers”  table with usename, cwid, emailid and last name.
+	 * Set session variable “firstname” as soon as email is added.
+	 */
 	public function addEmail(){
 		$data['title'] = "Marist Disussion Forums";
 	  // Submitted form data
@@ -351,6 +409,11 @@ class Discussion extends CI_Controller
 				$this->load->view('fail_view');
 			}
 	}
+
+	/**
+	 * This is helper method - it is called when the new reply is added to a discussion.
+	 * With a new reply, this method locates discussion and loads same page again with discussionDetails_view
+	 */
 	public function search_discussion(){
 		$data['title'] = "Marist Disussion Forums";
 		$ds_num = $this->uri->segment(3);
@@ -364,10 +427,15 @@ class Discussion extends CI_Controller
 		}
 	}
 
-	 /*email_user
+	/*email_user
      * $requesterName = discussion creator
      * $requesterEmail = category email
      * $requestID = $d_id
+	 * Needs 4 arguments - $requesterName, $requesterEmail, $d_id(discussion ID), $ds_body(Discussion body)
+		(requester here is recipient)
+	 * Calls a function to Generate UUID (scrambling discussion ID in to 14 char long alphanumeric number)
+	 * Appends UUID to the URL that is sent to the recipient. 
+	 * Sends an email
      */
     public function email_user($requesterName, $requesterEmail, $d_id, $ds_body){
         $this->load->library('email');
@@ -411,8 +479,11 @@ class Discussion extends CI_Controller
         } else {
             return 0;
         }
-    }
-
+	}
+	
+	/**
+	 * Helper function, called inside email_user() to generate random string of alphanumeric characters
+	 */
     public function generateRandomString() {
         $length = 6;
         $characters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHI0123456789JKLMNOPQRSTUVWXYZ';
