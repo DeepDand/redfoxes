@@ -9,6 +9,10 @@ class Discussion_model extends CI_Model
 		// $this->load->database();
 	}
 	
+
+	/***
+	 * fetch list of discussion from db
+	 */
 	public function discussion_list() {
 		//$result = $this->db->get('discussion');
 		//$result = $this->db->query($query);
@@ -23,10 +27,9 @@ class Discussion_model extends CI_Model
 		}
 	}
 
-	// Look and see if the email address already exists in the users
-    // table, if it does return the primary key, if not create them
-    // a user account and return the primary key.
-	
+	/**
+	 * Create a new discussion - save it int discussion table
+	 */
 	public function create($data) {
         $discussion_data = array('cwid' => $data['cwid'],'d_title' => $data['ds_title'],'d_body' =>$data['ds_body'],'category'=>$data['category'],'d_num'=>$data['ds_num'],'username'=>$data['firstname']); //can be added a field for active discussions 'ds_is_active' => '1'
 		$inserting =  $this->db->insert("discussion",$discussion_data);
@@ -37,9 +40,9 @@ class Discussion_model extends CI_Model
 		}
 	}
 
-	// Look and see if the email address already exists in the users
-    // table, if it does return the primary key, if not create them
-    // a user account and return the primary key.
+	/**
+	 * Create a new reply - save it int post table
+	 */
 	public function createPost($data) {
 		$post_data = array('d_id' => $data['d_id'],'p_title' => $data['p_title'],'p_body' =>$data['p_body'],'cwid' =>$data['cwid'],'username'=>$data['firstname']); //can be added a field for active discussions 'ds_is_active' => '1'
 		$inserting =  $this->db->insert("post",$post_data);
@@ -50,6 +53,9 @@ class Discussion_model extends CI_Model
 		}
 	}
 
+	/**
+	 * adds an email id for a new user
+	 */
 	public function addEmailId($data) {
     	$email_data = array('email' => $data['emailid'],'cwid' => $data['cwid'],'firstname' =>$data['firstname'], 'lastname' =>$data['lastname']);
 		//$email_data = array('emailid' => $data['emailid'],'cwid' => $data['cwid'],'firstname' =>$data['firstname'],'lastname' =>$data['lastname']);
@@ -61,9 +67,10 @@ class Discussion_model extends CI_Model
 		}
 	}
 
-	// Look and see if the email address already exists in the users
-    // table, if it does return the primary key, if not create them
-    // a user account and return the primary key.
+	/**
+	 * the function is for creating comment on someone's post
+	 * this is not being used in this version but kept for future use
+	 */
 	public function createComment($data) {
     	$comment_data = array('p_id' => $data['p_id'],'c_body' =>$data['c_body'],'cwid' =>$data['cwid']); //can be added a field for active discussions 'ds_is_active' => '1'
 		$inserting =  $this->db->insert("comment",$comment_data);
@@ -74,6 +81,9 @@ class Discussion_model extends CI_Model
 		}
 	}
 
+	/**
+	 * get email ID based on category
+	 */
 	public function getEmailId($data){
         //get email id based on category
         $condition = 'category='."'".$data['category']."'";
@@ -96,7 +106,7 @@ class Discussion_model extends CI_Model
         $this->db->where($condition);
         $didquery = $this->db->get();
         $ret = $didquery->row();
-        $d_id = 	$ret->d_id;
+        $d_id = $ret->d_id;
         if($didquery->num_rows() > 0){
             return $d_id;
         }
@@ -119,7 +129,7 @@ class Discussion_model extends CI_Model
 		}
 	}
 
-	//function to fetch discussions details from the database
+	//function to fetch discussions id from the database
 	public function find_discussion($dnum){
 		$condition = 'd_num='."'".$dnum."'".' OR '.'d_id='."'".$dnum."'";
 		$this->db->select('d_id, d_title, d_body, cwid, category,  datetime(age, "localtime") as age, d_num, username');
@@ -173,7 +183,7 @@ class Discussion_model extends CI_Model
 	}
 	
 	/*
-     * find email -
+     * find email flag -
      * first need to find the category
      * from category, find email iD
      */
@@ -206,8 +216,8 @@ class Discussion_model extends CI_Model
         }
     }
 
+	//Count number of replies in a discussion
 	public function count_post($did){
-		//function to fetch discussions details from the database
 		$condition = 'd_id='."'".$did."'";
 		$this->db->select('*');
 		$this->db->from('post');
@@ -218,7 +228,8 @@ class Discussion_model extends CI_Model
 		$count = $query->num_rows();
 		return $count;
 	}
-	//function to fetch discussions details from the database
+
+	//Fetches list of replies on discussion that matches with $did
 	public function fetch_post($did){//, $limit, $start)
 		$condition = 'd_id='."'".$did."'";
 		$this->db->select('p_id, d_id, p_title, p_body, cwid, datetime(age, "localtime") as age, username');
@@ -235,7 +246,7 @@ class Discussion_model extends CI_Model
 		}
 	}
 
-	//function to fetch discussions details from the database
+	//function to fetch discussion reply details from the database based on $pid
 	public function fetch_postid($pid){
 		$condition = 'p_id='."'".$pid."'";
 		$this->db->select('*');
@@ -252,6 +263,7 @@ class Discussion_model extends CI_Model
 		}
 	}
 
+	//Get webusers details matching $cwid
 	public function checkuniqueuser($cwid){
 		$condition = 'cwid='."'".$cwid."'";
 		$this->db->select('*');
@@ -265,7 +277,7 @@ class Discussion_model extends CI_Model
 		}
 	}
 
-	
+	//Get email flag based on category
 	public function getMailFlag($category){
 		$condition = 'category='."'".$category."'";
         $this->db->select('*');
@@ -279,6 +291,7 @@ class Discussion_model extends CI_Model
         }
 	}
 
+	//Returns first name based on cwid
 	public function getusername($cwid){
 		$condition = 'cwid='."'".$cwid."'";
 		$this->db->select('*');
@@ -295,6 +308,8 @@ class Discussion_model extends CI_Model
 		}
 	}
 
+	//Returns comments on discussion replies
+	// this is not being used but kept for future use
 	public function fetch_comment($pid){
 		$condition = 'p_id='."'".$pid."'";
 		$this->db->select('*');
