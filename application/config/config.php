@@ -24,7 +24,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 |
 */
 //$config['base_url'] = 'http://localhost/redv1/';
-$config['base_url'] = 'http://dev.library.marist.edu/redv1/';
+$config['base_url'] = 'http://dev.library.marist.edu/redfoxes/';
 /*
 |--------------------------------------------------------------------------
 | Index File
